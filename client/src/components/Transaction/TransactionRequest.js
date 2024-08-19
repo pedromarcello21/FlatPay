@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-function TransactionRequest({ createRequest }) {
+function TransactionRequest({ createRequest, currentUser }) {
 
   const [amount, setAmount] = useState('')
   const [selectedUser, setSelectedUser] = useState('')
@@ -9,7 +9,7 @@ function TransactionRequest({ createRequest }) {
   useEffect(() =>{
     fetch('/users')
     .then(res => res.json())
-    .then(data => setUsers(data))
+    .then(data => setUsers(data.filter( user => user.id !== currentUser.id)))
   }, [])
 
   function handleSubmit(e) {
