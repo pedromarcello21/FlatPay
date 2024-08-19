@@ -33,27 +33,27 @@ function TransactionRequest({ createRequest, currentUser }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3>New Transaction:</h3>
+      <h3>Request Transaction:</h3>
       
       <div>
-        <label>
+        {/* <label>
           <input
             type="radio"
             value="sender"
             checked={userRole === 'sender'}
             onChange={() => setUserRole('sender')}
           />
-          Payment
-        </label>
-        <label>
+          Request
+        </label> */}
+        {/* <label>
           <input
             type="radio"
             value="receiver"
             checked={userRole === 'receiver'}
             onChange={() => setUserRole('receiver')}
           />
-          Request
-        </label>
+          Payment
+        </label> */}
       </div>
 
 
@@ -85,7 +85,7 @@ function TransactionRequest({ createRequest, currentUser }) {
         required
       />
 
-      <button type="submit">Add Transaction</button>
+      <button type="submit">Send</button>
     </form>
   );
 }
