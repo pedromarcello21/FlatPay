@@ -51,10 +51,33 @@ class Transaction(db.Model, SerializerMixin):
     receiver = db.relationship('User', 
                                foreign_keys=[requestee], 
                                back_populates='transactions_received')
+    
+    def __repr__(self):
+        return f"<Transaction from {self.requestor} to {self.requestee}, amount: {self.amount}, year: {self.year}>"
 
     # Serialize rules
     serialize_rules = ('-sender', '-receiver')
 
+## FRIEND REQUEST MODEL ###############################################################################################
+class FriendRequest(db.Model, SerializerMixin):
+    __tablename__ = 'friend_requests'
+
+    id = db.Column(db.Integer, primary_key=True)
+    invitor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    invitee_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.String, default='pending')
+
+    # Relationships
+    invitor = db.relationship('User', foreign_keys=[invitor_id], back_populates='friends_sent')
+    invitee = db.relationship('User', foreign_keys=[invitee_id], back_populates='friends_received')
+    
+    # Serialize rules
+    serialize_rules = ('-invitor', '-invitee')
 
     def __repr__(self):
-        return f"<Transaction from {self.requestor} to {self.requestee}, amount: {self.amount}, year: {self.year}>"
+        return f"<Friend request from {self.invitor} to {self.invitee}>"
+    
+## END FRIEND REQUEST MODEL ###############################################################################################
+
+
+    

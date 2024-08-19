@@ -10,7 +10,7 @@ from flask_restful import Resource
 from config import app, db, api
 
 # Model imports
-from models import User, Transaction
+from models import User, Transaction, FriendRequest
 
 from sqlalchemy import func, and_
 
@@ -218,6 +218,64 @@ def get_stats():
         } for year, credit, debit in yearly_transactions]
     }, 200
 
+## FRIEND REQUESTS ##############################################################################################################################
+
+@app.post('/friend_requests')
+def send_friend_request():
+    data = request.json
+    sender_id = session.get('user_id')
+    receiver_id = data.get('receiver_id')
+
+    if not sender_id:
+        return {'error': "You must be logged in to perform this action"}, 401
+    
+    if sender_id == receiver_id:
+        return {'error': "You can't be friends with yourself!"}, 400
+    
+    existing_request = FriendRequest.query.filter_by(sender_id=sender_id, receiver_id=receiver_id, status='pending').first()
+
+    if existing_request:
+        return {'error': 'Request already sent!'}, 400
+    
+    new_request = FriendRequest(sender_id=sender_id, receiver_id=receiver_id)
+    db.session.add(new_request)
+    db.session.commit()
+    
+    return new_request.to_dict(), 201
+
+@app.get('/friend_requests')
+def get_friend_requests():
+    user_id = session.get('user_id')
+    if not user_id:
+        return {'error': "You must be logged in to perform this action"}, 401
+    
+    received_requests = FriendRequest.query.filter_by(receiver_id=user_id, status='pending').all()
+
+    return [request.to_dict() for request in received_requests], 200
+
+@app.patch('/friend_request/<int:request_id>')
+def respond_to_friend_request(request_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return {'error': "You must be logged in to perform this action"}, 401
+    
+    data = request.json
+    action = data.get('action')
+
+    if action not in ['accept', 'reject']:
+        return {'error': 'Invalid action. Must be "accept" or "reject"'}, 400
+
+    friend_request = FriendRequest.query.get(request_id)
+
+    if not friend_request or friend_request.receiver_id != user_id:
+        return {'error': 'Friend request not found'}, 404
+
+    friend_request.status = 'accepted' if action == 'accept' else 'rejected'
+    db.session.commit()
+
+    return friend_request.to_dict(), 200
+
+## END FRIEND REQUESTS ###############################################################################################################################################
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
