@@ -99,7 +99,7 @@ def get_debits():
             'requestor_username': username,
             'requestee': transaction.requestee,
             'amount': transaction.amount,
-            'year': transaction.year  # Include the year in the result
+            'year': transaction.year  
         }
         for transaction, username in debits
     ]
@@ -124,7 +124,7 @@ def get_credits():
             'requestee': transaction.requestee,
             'requestee_username': username,
             'amount': transaction.amount,
-            'year': transaction.year  # Include the year in the result
+            'year': transaction.year  
         }
         for transaction, username in credits
     ]
@@ -152,6 +152,14 @@ def add_transaction():
         return new_transaction.to_dict(), 201
     except Exception as e:
         return {'error': str(e)}, 404
+    
+@app.delete('/payment')
+def make_payment():
+    data = request.json
+    payment = Transaction.query.where(data['id'] == Transaction.id).first()
+    db.session.delete(payment)
+    db.session.commit()
+    return {}, 204
 
 @app.get('/api/stats')
 def get_stats():

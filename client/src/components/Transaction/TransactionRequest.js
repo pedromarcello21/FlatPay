@@ -1,52 +1,88 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 
-function TransactionRequest({ createRequest }) {
+function TransactionRequest({ createRequest, currentUser }) {
+  const [amount, setAmount] = useState('');
+  const [selectedUser, setSelectedUser] = useState('');
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [users, setUsers] = useState([]);
+  const [userRole, setUserRole] = useState('sender'); 
 
-  const [amount, setAmount] = useState('')
-  const [selectedUser, setSelectedUser] = useState('')
-  const [users, setUsers] = useState([])
-
-  useEffect(() =>{
+  useEffect(() => {
     fetch('/users')
-    .then(res => res.json())
-    .then(data => setUsers(data))
-  }, [])
+      .then(res => res.json())
+      .then(data => setUsers(data.filter(user => user.id !== currentUser.id)));
+  }, [currentUser.id]);
 
   function handleSubmit(e) {
-    e.preventDefault()
-    createRequest({ amount:amount, requestee:selectedUser})
-    setAmount('')
-    setSelectedUser('')
+    e.preventDefault();
+    const requestData = {
+      amount: parseFloat(amount),
+      year: parseInt(year),
+      [userRole === 'sender' ? 'requestee' : 'requestor']: parseInt(selectedUser),
+      [userRole === 'sender' ? 'requestor' : 'requestee']: currentUser.id
+    };
+    createRequest(requestData);
+    setAmount('');
+    setSelectedUser('');
+    setYear(new Date().getFullYear());
   }
-
-  const handleUserChange = e => setSelectedUser(e.target.value)
-  const handleAmountChange = e => setAmount(e.target.value)
 
   return (
     <form onSubmit={handleSubmit}>
+      <h3>New Transaction:</h3>
+      
+      <div>
+        <label>
+          <input
+            type="radio"
+            value="sender"
+            checked={userRole === 'sender'}
+            onChange={() => setUserRole('sender')}
+          />
+          Payment
+        </label>
+        <label>
+          <input
+            type="radio"
+            value="receiver"
+            checked={userRole === 'receiver'}
+            onChange={() => setUserRole('receiver')}
+          />
+          Request
+        </label>
+      </div>
 
-      <h3>New Request:</h3>
-
-      <select value = {selectedUser} onChange={handleUserChange} required>
-        <option value = "" >Select a User</option>
-        {users.map(user => 
-            <option key = {user.id} name = "user" value = {user.id}>
+      <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} required>
+        <option value="">Select a User</option>
+        {users.map(user => (
+          <option key={user.id} value={user.id}>
             {user.username}
-            </option>)
-            }
-        </select>
+          </option>
+        ))}
+      </select>
       
       <input
-        type="text"
-        onChange={handleAmountChange}
+        type="number"
         value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        placeholder="Amount"
+        required
       />
 
-      <input type="submit" value={'Add Request'} />
+      <input
+        type="number"
+        value={year}
+        onChange={(e) => setYear(e.target.value)}
+        placeholder="Year"
+        min="1900"
+        max="2099"
+        step="1"
+        required
+      />
 
+      <button type="submit">Add Transaction</button>
     </form>
-  )
-
+  );
 }
 
-export default TransactionRequest
+export default TransactionRequest;
