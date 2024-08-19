@@ -25,7 +25,7 @@ function TransactionRequest({ createRequest, currentUser }) {
   return (
     <form onSubmit={handleSubmit}>
 
-      <h3>New Request:</h3>
+      <h3>Send Request:</h3>
 
       <select value = {selectedUser} onChange={handleUserChange} required>
         <option value = "" >Select a User</option>

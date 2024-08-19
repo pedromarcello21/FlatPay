@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react'
 import TransactionRequest from './TransactionRequest'
+import Payment from './Payment'
 
 export default function Transactions({currentUser}) {
 
@@ -96,6 +97,7 @@ export default function Transactions({currentUser}) {
         { credits.map(credit => <h3 key = {'credit' + credit.id}> {credit.requestee_username} owes me ${credit.amount}</h3>)}
 
         <TransactionRequest createRequest={createRequest} currentUser = {currentUser}/>
+        <Payment />
     </>
   )
 }
