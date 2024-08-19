@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 
 function TransactionRequest({ createRequest, currentUser }) {
+
   const [amount, setAmount] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
   const [year, setYear] = useState(new Date().getFullYear());
   const [users, setUsers] = useState([]);
   const [userRole, setUserRole] = useState('sender'); 
 
+
   useEffect(() => {
     fetch('/users')
+
       .then(res => res.json())
       .then(data => setUsers(data.filter(user => user.id !== currentUser.id)));
   }, [currentUser.id]);
+
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -52,10 +56,11 @@ function TransactionRequest({ createRequest, currentUser }) {
         </label>
       </div>
 
+
       <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} required>
         <option value="">Select a User</option>
         {users.map(user => (
-          <option key={user.id} value={user.id}>
+          <option key={user.id} name = "user" value={user.id}>
             {user.username}
           </option>
         ))}

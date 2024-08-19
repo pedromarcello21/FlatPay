@@ -139,8 +139,8 @@ def add_transaction():
         db.session.commit()
         return new_transaction.to_dict(), 201
     except Exception as e:
-        return {'error': str(e)}, 404
-    
+
+        return {'error':str(e)}, 404
 
 @app.delete('/payment')
 def make_payment():
@@ -149,7 +149,6 @@ def make_payment():
     db.session.delete(payment)
     db.session.commit()
     return {}, 204
-
 
 @app.get('/api/stats')
 def get_stats():
