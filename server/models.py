@@ -41,7 +41,7 @@ class Transaction(db.Model, SerializerMixin):
     requestor = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     requestee = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     amount = db.Column(db.Integer, nullable=False)
-
+    year = db.Column(db.Integer, nullable=False)
 
     # Relationships
     sender = db.relationship('User', 
@@ -57,4 +57,4 @@ class Transaction(db.Model, SerializerMixin):
 
 
     def __repr__(self):
-        return f"<Transaction from {self.requestor} to {self.requestee}, amount: {self.amount}>"
+        return f"<Transaction from {self.requestor} to {self.requestee}, amount: {self.amount}, year: {self.year}>"
