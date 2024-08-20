@@ -22,8 +22,8 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <h1>FlatPay</h1>
         <NavBar currentUser={currentUser} setCurrentUser={setCurrentUser} />
+        <h1>FlatPay</h1>
         <Switch>
           <Route exact path="/">
             <UserPanel currentUser={currentUser} setCurrentUser={setCurrentUser} />

@@ -130,6 +130,7 @@ export default function Transactions({ currentUser }) {
   return (
     <>
 
+      {debits.length > 0 &&(<div>
       <div>Pending Requests:</div>
       {debits.map(debit => (
         <h3 key={`debit${debit.id}`} id={debit.id}>
@@ -137,14 +138,20 @@ export default function Transactions({ currentUser }) {
           <button onClick={handleRequest}>💸</button>
         </h3>
       ))}
+      </div>)}
       
-      <div>Pending Payments:</div>
-      {credits.map(credit => (
-        <h3 key={`credit${credit.id}`}>
-        Pending ${credit.amount} from {credit.requestee_username} in {credit.year} for {credit.description}
-        </h3>
-      ))}
+      { credits.length > 0 && (
+        <div>
+        <div>Pending Payments:</div>
+        {credits.map(credit => (
+          <h3 key={`credit${credit.id}`}>
+          Pending ${credit.amount} from {credit.requestee_username} in {credit.year} for {credit.description}
+          </h3>
+        ))}
+        </div>
+        )}
 
+      {payments.length > 0 && (<div>
       <div>Incoming payments:</div>
       {payments.map(payment => (
         <h3 key = {`payment${payment.id}`} id ={payment.id}>
@@ -152,6 +159,7 @@ export default function Transactions({ currentUser }) {
         <button onClick={handlePayment}>✔️</button>
       </h3>
       ))}
+      </div>)}
 
       <TransactionRequest createRequest={createRequest} currentUser={currentUser} />
 

@@ -13,8 +13,8 @@ export default function UserDetails({currentUser, setCurrentUser}) {
 
   return (
     <div>
-        <h2>Welcome {currentUser.username}</h2>
-        <button onClick = {handleLogout}>Logout</button>
+        <h2>Welcome {currentUser.username}!</h2>
+        {/* <button onClick = {handleLogout}>Logout</button> */}
     </div>
   )
 }
