@@ -7,6 +7,7 @@ function TransactionRequest({ createRequest, currentUser }) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [users, setUsers] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('')
+  const [description, setDescription] = useState('')
   // const [userRole, setUserRole] = useState('sender'); 
 
 
@@ -24,7 +25,8 @@ function TransactionRequest({ createRequest, currentUser }) {
       amount: parseFloat(amount),
       year: parseInt(year),
       payment_method:paymentMethod,
-      requestee:selectedUser
+      requestee:selectedUser,
+      description:description
       //,
       // [userRole === 'sender' ? 'requestee' : 'requestor']: parseInt(selectedUser),
       // [userRole === 'sender' ? 'requestor' : 'requestee']: currentUser.id
@@ -35,6 +37,7 @@ function TransactionRequest({ createRequest, currentUser }) {
     setSelectedUser('');
     setPaymentMethod('');
     setYear(new Date().getFullYear());
+    setDescription('')
   }
 
   return (
@@ -90,6 +93,12 @@ function TransactionRequest({ createRequest, currentUser }) {
         step="1"
         required
       />
+      <input
+      type = "text"
+      value={description}
+      onChange={(e) => setDescription(e.target.value)}
+      placeholder="What's this for?">
+      </input>
 
       <button type="submit">Send</button>
     </form>

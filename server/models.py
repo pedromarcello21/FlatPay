@@ -64,6 +64,7 @@ class Transaction(db.Model, SerializerMixin):
     amount = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
     payment_method=db.Column(db.String)
+    description = db.Column(db.String)
 
     # Relationships
     sender = db.relationship('User', 
