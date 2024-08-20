@@ -124,6 +124,13 @@ def get_users():
     all_users = User.query.all()
     return [user.to_dict() for user in all_users]
 
+# @app.get('/users/<int:id>')
+# def get_a_user(id):
+#     user_id = session.get('user_id')
+#     if user_id:
+#         found_user = User.query.where(User.id == id).first()
+#         return found_user.to_dict
+
 
 @app.post('/request')
 def add_transaction():
@@ -223,25 +230,27 @@ def get_stats():
 @app.post('/friend_requests')
 def send_friend_request():
     data = request.json
-    sender_id = session.get('user_id')
     receiver_id = data.get('receiver_id')
-
+    sender_id = session.get('user_id')
+    
+    
     if not sender_id:
         return {'error': "You must be logged in to perform this action"}, 401
     
     if sender_id == receiver_id:
         return {'error': "You can't be friends with yourself!"}, 400
     
-    existing_request = FriendRequest.query.filter_by(sender_id=sender_id, receiver_id=receiver_id, status='pending').first()
+    existing_request = FriendRequest.query.filter_by(invitor_id=sender_id, invitee_id=receiver_id, status='pending').first()
 
     if existing_request:
         return {'error': 'Request already sent!'}, 400
     
-    new_request = FriendRequest(sender_id=sender_id, receiver_id=receiver_id)
+    new_request = FriendRequest(invitor_id=sender_id, invitee_id=receiver_id, status='pending')
     db.session.add(new_request)
     db.session.commit()
     
     return new_request.to_dict(), 201
+    # return data, 201
 
 @app.get('/friend_requests')
 def get_friend_requests():
@@ -249,7 +258,7 @@ def get_friend_requests():
     if not user_id:
         return {'error': "You must be logged in to perform this action"}, 401
     
-    received_requests = FriendRequest.query.filter_by(receiver_id=user_id, status='pending').all()
+    received_requests = FriendRequest.query.filter_by(invitee_id=user_id, status='pending').all()
 
     return [request.to_dict() for request in received_requests], 200
 
@@ -267,13 +276,40 @@ def respond_to_friend_request(request_id):
 
     friend_request = FriendRequest.query.get(request_id)
 
-    if not friend_request or friend_request.receiver_id != user_id:
+    if not friend_request or friend_request.invitee_id != user_id:
         return {'error': 'Friend request not found'}, 404
 
     friend_request.status = 'accepted' if action == 'accept' else 'rejected'
+    
+    if friend_request.status == 'accepted':
+        # Get both users
+        user = User.query.get(user_id)
+        friend = User.query.get(friend_request.invitor_id)
+        
+        # Add the friendship relationship
+        user.friends.append(friend)
+        friend.friends.append(user)
+        
+        db.session.add(user)
+        db.session.add(friend)
+    
     db.session.commit()
 
     return friend_request.to_dict(), 200
+
+@app.get('/friends')
+def get_friends():
+    user_id = session.get('user_id')
+    if not user_id:
+        return {'error': "You must be logged in to perform this action"}, 401
+    
+    user = User.query.get(user_id)
+    if not user:
+        return {'error': "User not found"}, 404
+
+    friends = user.friends
+    
+    return [friend.to_dict() for friend in friends], 200
 
 ## END FRIEND REQUESTS ###############################################################################################################################################
 

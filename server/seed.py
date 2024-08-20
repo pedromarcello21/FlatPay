@@ -8,15 +8,18 @@ from faker import Faker
 
 # Local imports
 from app import app
-from models import db, Transaction, User
+from models import db, Transaction, User, FriendRequest, friendship_table
 
 if __name__ == '__main__':
     fake = Faker()
     with app.app_context():
         print("Starting seed...")
-        Transaction.query.delete()
-        User.query.delete()
-
+        
+        FriendRequest.query.delete()
+        
+        # Transaction.query.delete()
+        # User.query.delete()
+        
         # # Create users
         # users = []
         # for _ in range(10):
