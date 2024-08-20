@@ -12,57 +12,103 @@ function FriendshipPage({ currentUser }) {
   }, []);
 
   const fetchFriends = () => {
-    fetch('/api/friends')
-      .then(res => res.json())
-      .then(data => setFriends(data));
+    fetch('/friends')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch friends');
+        return res.json();
+      })
+      .then(data => setFriends(data))
+      .catch(error => console.error('Error fetching friends:', error));
   };
 
   const fetchFriendRequests = () => {
-    fetch('/api/friend-requests')
-      .then(res => res.json())
-      .then(data => setFriendRequests(data));
+    fetch('/friend_requests')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch friend requests');
+        return res.json();
+      })
+      .then(data => setFriendRequests(data))
+      .catch(error => console.error('Error fetching friend requests:', error));
+  };
+
+  const handleAddFriend = (receiver_id) => {
+    console.log(JSON.stringify({ receiver_id }));
+    fetch('/friend_requests', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json', 
+      },
+      body: JSON.stringify( {receiver_id} ),
+    })
+      .then(res => {
+        console.log(res);
+        if (!res.ok) throw new Error('Failed to send friend request');
+        return res.json();
+      })
+      .then(() => {
+        setSearchResults(prevResults =>
+          prevResults.map(user =>
+            user.id === receiver_id ? { ...user, requestSent: true } : user
+          )
+        );
+      })
+      .catch(error => console.error('Error sending friend request:', error));
+  };
+
+  const handleAcceptRequest = (requestId) => {console.log(JSON.stringify({action: 'accept'}));
+    fetch(`/friend_request/${requestId}`, { 
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({action : 'accept'})
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to accept friend request');
+      return res.json();
+    })
+    .then(() => {
+      fetchFriends();
+      fetchFriendRequests();
+    })
+    .catch(error => console.error('Error accepting friend request:', error));
+  };
+
+  const handleRejectRequest = (requestId) => {
+    fetch(`/friend_request/${requestId}`, { 
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({action : 'reject'})
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to reject friend request');
+      return res.json();
+    })
+    .then(() => {
+      fetchFriends();
+      fetchFriendRequests();
+    })
+    .catch(error => console.error('Error rejecting friend request:', error));
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetch(`/api/users/search?q=${searchTerm}`)
-      .then(res => res.json())
-      .then(data => setSearchResults(data));
+    fetch(`/users`)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to search users');
+        return res.json();
+      })
+      .then(data => setSearchResults(data.filter(user=>user.username.toLowerCase()==searchTerm.toLowerCase())
+        
+      ))
+      .catch(error => console.error('Error searching users:', error));
   };
-
-  const handleAddFriend = (userId) => {
-    fetch('/api/friend-requests', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
-    })
-      .then(() => {
-        setSearchResults(prevResults =>
-          prevResults.map(user =>
-            user.id === userId ? { ...user, requestSent: true } : user
-          )
-        );
-      });
-  };
-
-  const handleAcceptRequest = (requestId) => {
-    fetch(`/api/friend-requests/${requestId}/accept`, { method: 'POST' })
-      .then(() => {
-        fetchFriends();
-        fetchFriendRequests();
-      });
-  };
-
-  const handleRejectRequest = (requestId) => {
-    fetch(`/api/friend-requests/${requestId}/reject`, { method: 'POST' })
-      .then(() => fetchFriendRequests());
-  };
-
-  const handleDeleteFriend = (friendId) => {
-    fetch(`/api/friends/${friendId}`, { method: 'DELETE' })
-      .then(() => fetchFriends());
-  };
-
+  
   return (
     <div>
       <h2>Friendship Management</h2>
@@ -73,7 +119,7 @@ function FriendshipPage({ currentUser }) {
           {friends.map(friend => (
             <li key={friend.id}>
               {friend.username}
-              <button onClick={() => handleDeleteFriend(friend.id)}>Remove Friend</button>
+              {/* <button onClick={() => handleDeleteFriend(friend.id)}>Remove Friend</button> */}
             </li>
           ))}
         </ul>
@@ -84,7 +130,7 @@ function FriendshipPage({ currentUser }) {
         <ul>
           {friendRequests.map(request => (
             <li key={request.id}>
-              {request.sender.username} wants to be your friend
+              {request.invitor_id} wants to be your friend
               <button onClick={() => handleAcceptRequest(request.id)}>Accept</button>
               <button onClick={() => handleRejectRequest(request.id)}>Reject</button>
             </li>

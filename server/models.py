@@ -1,9 +1,14 @@
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.declarative import declarative_base
 
 from config import db, bcrypt
 
-# Models go here!
+
+friendship_table = db.Table('friendships', db.metadata,
+    db.Column('user_id', db.ForeignKey('users.id', ondelete="CASCADE"), primary_key=True),
+    db.Column('friend_id', db.ForeignKey('users.id', ondelete="CASCADE"), primary_key=True)
+)
 
 class User(db.Model, SerializerMixin):
     __tablename__ = "users"
@@ -11,7 +16,7 @@ class User(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, nullable=False, unique=True)
     _hashed_password = db.Column(db.String)
-
+    
     @property
     def password(self):
         raise Exception('You may not view password')
@@ -25,11 +30,27 @@ class User(db.Model, SerializerMixin):
 
     # Relationships
     transactions_sent = db.relationship('Transaction', foreign_keys='Transaction.requestor', back_populates='sender')
-
     transactions_received = db.relationship('Transaction', foreign_keys='Transaction.requestee', back_populates='receiver')
+    friends_sent = db.relationship('FriendRequest', foreign_keys='FriendRequest.invitor_id', back_populates='invitor')
+    friends_received = db.relationship('FriendRequest', foreign_keys='FriendRequest.invitee_id', back_populates='invitee')
+
+    friends = db.relationship(
+        'User',
+        secondary=friendship_table,
+        primaryjoin=(friendship_table.c.user_id == id),
+        secondaryjoin=(friendship_table.c.friend_id == id),
+        back_populates='befriended_by'
+    )
+    befriended_by = db.relationship(
+        'User',
+        secondary=friendship_table,
+        primaryjoin=(friendship_table.c.friend_id == id),
+        secondaryjoin=(friendship_table.c.user_id == id),
+        back_populates='friends'
+    )
 
     # Serialize rules
-    serialize_rules = ('-transactions_sent.sender', '-transactions_received.receiver', '-_hashed_password')
+    serialize_rules = ('-transactions_sent.sender', '-transactions_received.receiver', '-_hashed_password', '-friends_sent.invitor', '-friends_received.invitee', '-friends.befriended_by', '-befriended_by.friends','-friends.friends','-befriended_by.befriended_by')
 
     def __repr__(self):
         return f"<User {self.username}>"
