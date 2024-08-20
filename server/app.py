@@ -76,8 +76,12 @@ def get_debits():
     debits = (
         db.session.query(Transaction, User.username)
         .join(User, Transaction.requestor == User.id)
-        .filter(Transaction.requestee == session['user_id'])
-        .all()
+        .where(
+            and_(
+                Transaction.requestee == session.get('user_id'),
+                Transaction.payment_method == 'request'
+            )
+        ).all()
     )
     
     result = [
@@ -101,7 +105,12 @@ def get_credits():
     credits = (
         db.session.query(Transaction, User.username)
         .join(User, Transaction.requestee == User.id)
-        .where(Transaction.requestor == session['user_id'])
+        .where(
+            and_(
+                Transaction.requestor == session.get('user_id'),
+                Transaction.payment_method == 'request'
+            )
+        )
         .all()
     )
     result = [
@@ -117,6 +126,75 @@ def get_credits():
     ]
     
     return result, 200
+
+@app.get('/payments')
+def get_payments():
+    # payments = Transaction.query.where(
+    #     and_(
+    #         Transaction.payment_method == 'payment',
+    #         Transaction.requestee == session.get('user_id')
+    #     )).all()
+    # return [payment.to_dict() for payment in payments]
+
+    payments = (
+        db.session.query(Transaction, User.username)
+        .join(User, Transaction.requestor == User.id)
+        .where(
+            and_(
+                Transaction.payment_method == 'payment',
+                    Transaction.requestee == session.get('user_id')
+                )).all()
+
+            )
+    result = [
+        {
+            'id':transaction.id,
+            'requestor':transaction.requestor,
+            'requestor_username': username,
+            'requestee': transaction.requestee,
+            'amount': transaction.amount,
+            'year': transaction.year 
+
+        }
+        for transaction, username in payments
+    ]
+    return result, 200
+
+# debits = (
+#         db.session.query(Transaction, User.username)
+#         .join(User, Transaction.requestor == User.id)
+#         .where(
+#             and_(
+#                 Transaction.requestee == session.get('user_id'),
+#                 Transaction.payment_method == 'request'
+#             )
+#         ).all()
+#     )
+    
+#     result = [
+#         {
+#             'id': transaction.id,
+#             'requestor': transaction.requestor,
+#             'requestor_username': username,
+#             'requestee': transaction.requestee,
+#             'amount': transaction.amount,
+#             'year': transaction.year  
+#         }
+#         for transaction, username in debits
+#     ]
+    
+#     return result, 200
+
+
+
+
+
+
+
+
+
+
+
 
 
 @app.get('/users')
@@ -137,10 +215,11 @@ def add_transaction():
     try:
         data = request.json
         new_transaction = Transaction(
-            requestor=data['requestor'],
+            requestor=session.get('user_id'),
             requestee=data['requestee'],
             amount=data['amount'],
-            year=data['year']
+            year=data['year'],
+            payment_method=data['payment_method']
         )
         db.session.add(new_transaction)
         db.session.commit()
@@ -149,13 +228,24 @@ def add_transaction():
 
         return {'error':str(e)}, 404
 
-@app.delete('/payment')
-def make_payment():
+@app.delete('/request')
+def make_request():
     data = request.json
     payment = Transaction.query.where(data['id'] == Transaction.id).first()
     db.session.delete(payment)
     db.session.commit()
     return {}, 204
+
+@app.delete('/payment')
+def make_payment():
+    data = request.json
+    payment = Transaction.query.where(data['id'] == Transaction.id).first()
+    if not payment:
+        return {'error': 'No payment ID provided'}, 400
+    else:
+        db.session.delete(payment)
+        db.session.commit()
+        return {}, 204
 
 @app.get('/api/stats')
 def get_stats():

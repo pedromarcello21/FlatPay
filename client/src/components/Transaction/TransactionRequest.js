@@ -6,11 +6,12 @@ function TransactionRequest({ createRequest, currentUser }) {
   const [selectedUser, setSelectedUser] = useState('');
   const [year, setYear] = useState(new Date().getFullYear());
   const [users, setUsers] = useState([]);
-  const [userRole, setUserRole] = useState('sender'); 
+  const [paymentMethod, setPaymentMethod] = useState('')
+  // const [userRole, setUserRole] = useState('sender'); 
 
 
   useEffect(() => {
-    fetch('/users')
+    fetch('/friends')
 
       .then(res => res.json())
       .then(data => setUsers(data.filter(user => user.id !== currentUser.id)));
@@ -22,41 +23,24 @@ function TransactionRequest({ createRequest, currentUser }) {
     const requestData = {
       amount: parseFloat(amount),
       year: parseInt(year),
-      [userRole === 'sender' ? 'requestee' : 'requestor']: parseInt(selectedUser),
-      [userRole === 'sender' ? 'requestor' : 'requestee']: currentUser.id
+      payment_method:paymentMethod,
+      requestee:selectedUser
+      //,
+      // [userRole === 'sender' ? 'requestee' : 'requestor']: parseInt(selectedUser),
+      // [userRole === 'sender' ? 'requestor' : 'requestee']: currentUser.id
     };
+    console.log(requestData)
     createRequest(requestData);
     setAmount('');
     setSelectedUser('');
+    setPaymentMethod('');
     setYear(new Date().getFullYear());
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3>Request Transaction:</h3>
+      <h3>Pay or Request:</h3>
       
-      <div>
-        {/* <label>
-          <input
-            type="radio"
-            value="sender"
-            checked={userRole === 'sender'}
-            onChange={() => setUserRole('sender')}
-          />
-          Request
-        </label> */}
-        {/* <label>
-          <input
-            type="radio"
-            value="receiver"
-            checked={userRole === 'receiver'}
-            onChange={() => setUserRole('receiver')}
-          />
-          Payment
-        </label> */}
-      </div>
-
-
       <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} required>
         <option value="">Select a User</option>
         {users.map(user => (
@@ -65,6 +49,28 @@ function TransactionRequest({ createRequest, currentUser }) {
           </option>
         ))}
       </select>
+
+      <label>
+        <input
+          type="radio"
+          value="payment"
+          name="payment_method"
+          // checked={userRole === 'receiver'}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+        />
+        Payment
+      </label>
+      
+      <label>
+        <input
+          type="radio"
+          value="request"
+          name='payment_method'
+          // checked={userRole === 'sender'}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+        />
+        Request
+      </label> 
       
       <input
         type="number"
