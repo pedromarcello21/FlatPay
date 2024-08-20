@@ -91,7 +91,8 @@ def get_debits():
             'requestor_username': username,
             'requestee': transaction.requestee,
             'amount': transaction.amount,
-            'year': transaction.year  
+            'year': transaction.year,
+            'description':transaction.description
         }
         for transaction, username in debits
     ]
@@ -120,7 +121,8 @@ def get_credits():
             'requestee': transaction.requestee,
             'requestee_username': username,
             'amount': transaction.amount,
-            'year': transaction.year  
+            'year': transaction.year  ,
+            'description':transaction.description
         }
         for transaction, username in credits
     ]
@@ -153,47 +155,13 @@ def get_payments():
             'requestor_username': username,
             'requestee': transaction.requestee,
             'amount': transaction.amount,
-            'year': transaction.year 
+            'year': transaction.year,
+            'description':transaction.description
 
         }
         for transaction, username in payments
     ]
     return result, 200
-
-# debits = (
-#         db.session.query(Transaction, User.username)
-#         .join(User, Transaction.requestor == User.id)
-#         .where(
-#             and_(
-#                 Transaction.requestee == session.get('user_id'),
-#                 Transaction.payment_method == 'request'
-#             )
-#         ).all()
-#     )
-    
-#     result = [
-#         {
-#             'id': transaction.id,
-#             'requestor': transaction.requestor,
-#             'requestor_username': username,
-#             'requestee': transaction.requestee,
-#             'amount': transaction.amount,
-#             'year': transaction.year  
-#         }
-#         for transaction, username in debits
-#     ]
-    
-#     return result, 200
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -202,12 +170,6 @@ def get_users():
     all_users = User.query.all()
     return [user.to_dict() for user in all_users]
 
-# @app.get('/users/<int:id>')
-# def get_a_user(id):
-#     user_id = session.get('user_id')
-#     if user_id:
-#         found_user = User.query.where(User.id == id).first()
-#         return found_user.to_dict
 
 
 @app.post('/request')
@@ -219,7 +181,8 @@ def add_transaction():
             requestee=data['requestee'],
             amount=data['amount'],
             year=data['year'],
-            payment_method=data['payment_method']
+            payment_method=data['payment_method'],
+            description=data['description']
         )
         db.session.add(new_transaction)
         db.session.commit()

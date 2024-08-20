@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useHistory } from 'react-router-dom';
+import './NavBar.css'
 
 function NavBar({ currentUser, setCurrentUser }) {
   const history = useHistory();

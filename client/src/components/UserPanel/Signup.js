@@ -1,5 +1,6 @@
 import React from 'react'
 import { useState } from 'react'
+import "./Login&Signup.css"
 
 
 export default function Signup({setCurrentUser}) {

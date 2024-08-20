@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './TransactionRequest.css'
 
 function TransactionRequest({ createRequest, currentUser }) {
 
@@ -7,6 +8,7 @@ function TransactionRequest({ createRequest, currentUser }) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [users, setUsers] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('')
+  const [description, setDescription] = useState('')
   // const [userRole, setUserRole] = useState('sender'); 
 
 
@@ -24,7 +26,8 @@ function TransactionRequest({ createRequest, currentUser }) {
       amount: parseFloat(amount),
       year: parseInt(year),
       payment_method:paymentMethod,
-      requestee:selectedUser
+      requestee:selectedUser,
+      description:description
       //,
       // [userRole === 'sender' ? 'requestee' : 'requestor']: parseInt(selectedUser),
       // [userRole === 'sender' ? 'requestor' : 'requestee']: currentUser.id
@@ -35,14 +38,15 @@ function TransactionRequest({ createRequest, currentUser }) {
     setSelectedUser('');
     setPaymentMethod('');
     setYear(new Date().getFullYear());
+    setDescription('')
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>Pay or Request:</h3>
+    <form onSubmit={handleSubmit} className="request-form">
+      <h3>Send a payment or request using the form below:</h3>
       
       <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} required>
-        <option value="">Select a User</option>
+        <option value="">Select Friend</option>
         {users.map(user => (
           <option key={user.id} name = "user" value={user.id}>
             {user.username}
@@ -50,27 +54,30 @@ function TransactionRequest({ createRequest, currentUser }) {
         ))}
       </select>
 
-      <label>
+      <div className='payment-type'>
         <input
           type="radio"
+          id="payment"
           value="payment"
           name="payment_method"
-          // checked={userRole === 'receiver'}
           onChange={(e) => setPaymentMethod(e.target.value)}
         />
-        Payment
-      </label>
-      
-      <label>
+        <label htmlFor="payment">
+          Payment
+        </label>
+        
         <input
           type="radio"
+          id="request"
           value="request"
-          name='payment_method'
-          // checked={userRole === 'sender'}
+          name="payment_method"
           onChange={(e) => setPaymentMethod(e.target.value)}
         />
-        Request
-      </label> 
+        <label htmlFor="request">
+          Request
+        </label> 
+      </div>
+
       
       <input
         type="number"
@@ -90,6 +97,13 @@ function TransactionRequest({ createRequest, currentUser }) {
         step="1"
         required
       />
+      <input
+      type = "text"
+      value={description}
+      onChange={(e) => setDescription(e.target.value)}
+      placeholder="What's this for?"
+      required>
+      </input>
 
       <button type="submit">Send</button>
     </form>

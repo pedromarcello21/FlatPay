@@ -15,9 +15,9 @@ if __name__ == '__main__':
     with app.app_context():
         print("Starting seed...")
         
-        FriendRequest.query.delete()
+        # FriendRequest.query.delete()
         
-        # Transaction.query.delete()
+        Transaction.query.delete()
         # User.query.delete()
         
         # # Create users
