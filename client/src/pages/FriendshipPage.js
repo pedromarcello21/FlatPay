@@ -103,10 +103,27 @@ function FriendshipPage({ currentUser }) {
         if (!res.ok) throw new Error('Failed to search users');
         return res.json();
       })
-      .then(data => setSearchResults(data.filter(user=>user.username.toLowerCase()==searchTerm.toLowerCase())
+        .then(data => setSearchResults(data.filter(user=>user.username.toLowerCase()===searchTerm.toLowerCase())
         
       ))
-      .catch(error => console.error('Error searching users:', error));
+        .catch(error => console.error('Error searching users:', error));
+  };
+
+  const handleDeleteFriend = (friendId) => {
+    
+    fetch('/friendships', {
+      method : "DELETE",
+      headers : {
+        "Content-Type": "application/json",
+        "Accept":"application/json"
+      },
+      body: JSON.stringify({friend_id : friendId})
+      })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to search users');
+        })
+        .then(fetchFriends())
+        .catch(error => console.error('Error removing friend:', error));
   };
   
   return (
@@ -119,7 +136,7 @@ function FriendshipPage({ currentUser }) {
           {friends.map(friend => (
             <li key={friend.id}>
               {friend.username}
-              {/* <button onClick={() => handleDeleteFriend(friend.id)}>Remove Friend</button> */}
+              <button onClick={() => handleDeleteFriend(friend.id)}>Remove Friend</button>
             </li>
           ))}
         </ul>
@@ -130,7 +147,7 @@ function FriendshipPage({ currentUser }) {
         <ul>
           {friendRequests.map(request => (
             <li key={request.id}>
-              {request.invitor_id} wants to be your friend
+              {request.invitor.username} wants to be your friend
               <button onClick={() => handleAcceptRequest(request.id)}>Accept</button>
               <button onClick={() => handleRejectRequest(request.id)}>Reject</button>
             </li>

@@ -10,7 +10,7 @@ from flask_restful import Resource
 from config import app, db, api
 
 # Model imports
-from models import User, Transaction, FriendRequest
+from models import User, Transaction, FriendRequest, friendship_table
 
 from sqlalchemy import func, and_
 
@@ -348,6 +348,37 @@ def get_friends():
     friends = user.friends
     
     return [friend.to_dict() for friend in friends], 200
+
+@app.delete('/friendships')
+def delete_friend():
+    data = request.json
+    user_id = session.get('user_id')
+    friend_id = data.get('friend_id')
+    
+    if not user_id:
+        return {'error': "You must be logged in to perform this action"}, 401
+    try:
+        db.session.execute(
+            friendship_table.delete().where(
+                (friendship_table.c.user_id == user_id) & 
+                (friendship_table.c.friend_id == friend_id),
+            )
+        )
+        db.session.execute(
+            friendship_table.delete().where(
+                (friendship_table.c.user_id == friend_id) &
+                (friendship_table.c.friend_id == user_id)
+            )
+        )
+        db.session.commit()
+
+
+
+        return {}, 204
+    except Exception as e:
+        return {'error': str(e)},404
+    
+    
 
 ## END FRIEND REQUESTS ###############################################################################################################################################
 
