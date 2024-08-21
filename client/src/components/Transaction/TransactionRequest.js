@@ -5,11 +5,9 @@ function TransactionRequest({ createRequest, currentUser }) {
 
   const [amount, setAmount] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
-  const [year, setYear] = useState(new Date().getFullYear());
   const [users, setUsers] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('')
   const [description, setDescription] = useState('')
-  // const [userRole, setUserRole] = useState('sender'); 
 
 
   useEffect(() => {
@@ -24,20 +22,15 @@ function TransactionRequest({ createRequest, currentUser }) {
     e.preventDefault();
     const requestData = {
       amount: parseFloat(amount),
-      year: parseInt(year),
       payment_method:paymentMethod,
       requestee:selectedUser,
       description:description
-      //,
-      // [userRole === 'sender' ? 'requestee' : 'requestor']: parseInt(selectedUser),
-      // [userRole === 'sender' ? 'requestor' : 'requestee']: currentUser.id
     };
     console.log(requestData)
     createRequest(requestData);
     setAmount('');
     setSelectedUser('');
     setPaymentMethod('');
-    setYear(new Date().getFullYear());
     setDescription('')
   }
 
@@ -83,20 +76,10 @@ function TransactionRequest({ createRequest, currentUser }) {
         type="number"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
-        placeholder="Amount"
+        placeholder="Amount in $"
         required
       />
 
-      <input
-        type="number"
-        value={year}
-        onChange={(e) => setYear(e.target.value)}
-        placeholder="Year"
-        min="1900"
-        max="2099"
-        step="1"
-        required
-      />
       <input
       type = "text"
       value={description}

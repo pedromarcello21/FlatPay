@@ -79,7 +79,6 @@ class Transaction(db.Model, SerializerMixin):
     requestor = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     requestee = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
-    year = db.Column(db.Integer, nullable=False)
     payment_method=db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=False)
 
@@ -116,13 +115,6 @@ class Transaction(db.Model, SerializerMixin):
     def validates_amount(self, key, value):
         if value <=0:
             return ValueError('Amount must be greater than $0')
-        else:
-            return value
-
-    @validates('year')
-    def validates_year(self, key, value):
-        if value not in range(1900, 2100):
-            return ValueError('Enter valid year')
         else:
             return value
 

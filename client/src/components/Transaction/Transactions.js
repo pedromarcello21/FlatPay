@@ -100,32 +100,6 @@ export default function Transactions({ currentUser }) {
       });
     };
 
-    // Implement a handle payment.  
-    // In debit mapping have a button to delete the transaction
-    // needs a handleDelete or handlePay
-
-    // const handlePayment = (e) =>{
-    //     e.preventDefault()
-    //     // console.log(e.target.parentNode.id)
-    //     const transaction_to_delete = e.target.parentNode.id
-    //     fetch('/payment', {
-    //         method:'DELETE',
-    //         headers:{
-    //             'Content-type':'application/json',
-    //             'Accept':'application/json'
-    //         },
-    //         body:JSON.stringify({id:transaction_to_delete})
-    //     })
-    //     .then( res => {
-    //         if(res.status == 204){
-    //             setDebits((debits) => debits.filter((debit) => debit.id !==parseInt(transaction_to_delete)))
-    //         }
-            
-    //         })
-
-    //     // .then(res => res.json())
-    //     // .then(data => setDebits((data) => data.filter((debit) => debit.id !== e.target.parentNode.id)))
-    // }
 
   return (
     <>
@@ -134,7 +108,7 @@ export default function Transactions({ currentUser }) {
       <div>Pending Requests:</div>
       {debits.map(debit => (
         <h3 key={`debit${debit.id}`} id={debit.id}>
-        {debit.requestor_username} requests ${debit.amount} in {debit.year} for {debit.description}
+        {debit.requestor_username} requests ${debit.amount} for {debit.description}
           <button onClick={handleRequest}>💸</button>
         </h3>
       ))}
@@ -145,7 +119,7 @@ export default function Transactions({ currentUser }) {
         <div>Pending Payments:</div>
         {credits.map(credit => (
           <h3 key={`credit${credit.id}`}>
-          Pending ${credit.amount} from {credit.requestee_username} in {credit.year} for {credit.description}
+          Pending ${credit.amount} from {credit.requestee_username} for {credit.description}
           </h3>
         ))}
         </div>
