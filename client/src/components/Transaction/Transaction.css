@@ -5,6 +5,9 @@
     height:400px;
     margin:0 auto;
     width:300px;
+    border: 4px solid black;
+    padding: 15px;
+    border-radius: 10px;
 }
 
 
@@ -51,8 +54,21 @@ input[type="text"], input[type="number"],button[type="submit"], option {
 h3{
     display: flex;
     justify-content: center;
+    text-align: center;
 }
 
 button[type="submit"]{
     background-color: lightgray;
+}
+
+.transaction-list{
+    display: flex;
+    justify-content: center;
+}
+
+.receive-cash{
+    margin-left: 10px;
+    background-color: lightgray;
+    border-radius: 10px;
+    width: 35px;
 }

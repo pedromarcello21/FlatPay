@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './TransactionRequest.css'
+import './Transaction.css'
 
 function TransactionRequest({ createRequest, currentUser }) {
 

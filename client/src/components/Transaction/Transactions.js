@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import TransactionRequest from './TransactionRequest';
-
+import "./Transaction.css"
 
 export default function Transactions({ currentUser }) {
   const [debits, setDebits] = useState([]);
@@ -105,18 +104,18 @@ export default function Transactions({ currentUser }) {
     <>
 
       {debits.length > 0 &&(<div>
-      <div>Pending Requests:</div>
+      <div className="transaction-list">Pending Requests:</div>
       {debits.map(debit => (
         <h3 key={`debit${debit.id}`} id={debit.id}>
         {debit.requestor_username} requests ${debit.amount} for {debit.description}
-          <button onClick={handleRequest}>💸</button>
+          <button className="receive-cash" onClick={handleRequest}>💸</button>
         </h3>
       ))}
       </div>)}
       
       { credits.length > 0 && (
         <div>
-        <div>Pending Payments:</div>
+        <div className="transaction-list">Pending Payments</div>
         {credits.map(credit => (
           <h3 key={`credit${credit.id}`}>
           Pending ${credit.amount} from {credit.requestee_username} for {credit.description}
@@ -126,11 +125,11 @@ export default function Transactions({ currentUser }) {
         )}
 
       {payments.length > 0 && (<div>
-      <div>Incoming payments:</div>
+      <div className="transaction-list">Incoming Payments</div>
       {payments.map(payment => (
         <h3 key = {`payment${payment.id}`} id ={payment.id}>
           {payment.requestor_username} sent you ${payment.amount} for {payment.description}
-        <button onClick={handlePayment}>✔️</button>
+        <button className="receive-cash" onClick={handlePayment}>✔️</button>
       </h3>
       ))}
       </div>)}
