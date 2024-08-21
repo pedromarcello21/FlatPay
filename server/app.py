@@ -91,7 +91,6 @@ def get_debits():
             'requestor_username': username,
             'requestee': transaction.requestee,
             'amount': transaction.amount,
-            'year': transaction.year,
             'description':transaction.description
         }
         for transaction, username in debits
@@ -121,7 +120,6 @@ def get_credits():
             'requestee': transaction.requestee,
             'requestee_username': username,
             'amount': transaction.amount,
-            'year': transaction.year  ,
             'description':transaction.description
         }
         for transaction, username in credits
@@ -131,12 +129,6 @@ def get_credits():
 
 @app.get('/payments')
 def get_payments():
-    # payments = Transaction.query.where(
-    #     and_(
-    #         Transaction.payment_method == 'payment',
-    #         Transaction.requestee == session.get('user_id')
-    #     )).all()
-    # return [payment.to_dict() for payment in payments]
 
     payments = (
         db.session.query(Transaction, User.username)
@@ -155,7 +147,6 @@ def get_payments():
             'requestor_username': username,
             'requestee': transaction.requestee,
             'amount': transaction.amount,
-            'year': transaction.year,
             'description':transaction.description
 
         }
@@ -180,7 +171,6 @@ def add_transaction():
             requestor=session.get('user_id'),
             requestee=data['requestee'],
             amount=data['amount'],
-            year=data['year'],
             payment_method=data['payment_method'],
             description=data['description']
         )
@@ -270,12 +260,7 @@ def get_stats():
             'username': most_active_partner.username,
             'transactionCount': most_active_partner.transaction_count,
             'totalAmount': float(most_active_partner.total_amount)
-        },
-        'yearlyTransactions': [{
-            'year': year,
-            'credit': float(credit),
-            'debit': float(debit)
-        } for year, credit, debit in yearly_transactions]
+        }
     }, 200
 
 ## FRIEND REQUESTS ##############################################################################################################################
