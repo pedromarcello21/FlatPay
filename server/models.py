@@ -146,7 +146,11 @@ class FriendRequest(db.Model, SerializerMixin):
     invitee = db.relationship('User', foreign_keys=[invitee_id], back_populates='friends_received')
     
     # Serialize rules
-    serialize_rules = ('-invitor', '-invitee')
+    # serialize_rules = ('invitor', 'invitee')
+    
+    # serialize_rules = ('-invitor.friends_sent', 'invitor.friends_received', '-invitee.friends_received', 'invitee.friends_sent', '-invitor.transactions_sent', '-invitor.transactions_received')
+
+    serialize_only = ('id','invitor_id', 'invitee_id', 'status', 'invitor.username', 'invitee.username')
 
     def __repr__(self):
         return f"<Friend request from {self.invitor} to {self.invitee}>"
