@@ -1,8 +1,11 @@
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import validates
+
 
 from config import db, bcrypt
+import re
 
 
 friendship_table = db.Table('friendships', db.metadata,
@@ -23,10 +26,23 @@ class User(db.Model, SerializerMixin):
     
     @password.setter
     def password(self, value):
+        if len(value) < 5:
+            raise ValueError('password must be atleast 5 characters')
         self._hashed_password = bcrypt.generate_password_hash(value).decode('utf-8')
     
     def authenticate(self, password_to_check):
         return bcrypt.check_password_hash(self._hashed_password, password_to_check)
+    
+    # Validations
+    @validates('username')
+    def validates_username(self, key, value):
+        if bool(re.match(r'^[a-zA-Z]',value)) == False:
+            raise ValueError('username must start with a letter')
+        elif len(value) < 5:
+            raise ValueError('username must be atleast 5 characters')
+        else:
+            return value
+    
 
     # Relationships
     transactions_sent = db.relationship('Transaction', foreign_keys='Transaction.requestor', back_populates='sender')
@@ -52,6 +68,7 @@ class User(db.Model, SerializerMixin):
     # Serialize rules
     serialize_rules = ('-transactions_sent.sender', '-transactions_received.receiver', '-_hashed_password', '-friends_sent.invitor', '-friends_received.invitee', '-friends.befriended_by', '-befriended_by.friends','-friends.friends','-befriended_by.befriended_by')
 
+
     def __repr__(self):
         return f"<User {self.username}>"
 
@@ -61,10 +78,10 @@ class Transaction(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     requestor = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     requestee = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    amount = db.Column(db.Integer, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
     year = db.Column(db.Integer, nullable=False)
-    payment_method=db.Column(db.String)
-    description = db.Column(db.String)
+    payment_method=db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=False)
 
     # Relationships
     sender = db.relationship('User', 
@@ -80,6 +97,48 @@ class Transaction(db.Model, SerializerMixin):
 
     # Serialize rules
     serialize_rules = ('-sender', '-receiver')
+
+    @validates('requestor')
+    def validates_requestor(self, key, value):
+        if not value:
+            return ValueError('Requestor must be present')
+        else:
+            return value
+        
+    @validates('requestee')
+    def validates_requestor(self, key, value):
+        if not value:
+            return ValueError('Requestee must be present')
+        else:
+            return value
+    
+    @validates('amount')
+    def validates_amount(self, key, value):
+        if value <=0:
+            return ValueError('Amount must be greater than $0')
+        else:
+            return value
+
+    @validates('year')
+    def validates_year(self, key, value):
+        if value not in range(1900, 2100):
+            return ValueError('Enter valid year')
+        else:
+            return value
+
+    @validates('payment_method')
+    def validates_payment_method(self, key, value):
+        if not value :
+            return ValueError('Payment method must be provided')
+        else:
+            return value
+
+    @validates('description')
+    def validates_description(self, key, value):
+        if len(value) not in range(1, 21):
+            return ValueError('Descrpition length out of range')
+        else:
+            return value
 
 ## FRIEND REQUEST MODEL ###############################################################################################
 class FriendRequest(db.Model, SerializerMixin):

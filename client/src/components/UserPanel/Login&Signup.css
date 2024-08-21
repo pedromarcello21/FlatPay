@@ -5,3 +5,9 @@ input[type="submit"]{
 
 }
 
+input[type="text"], input[type="password"],button[type="submit"], option {
+    height:40px;  
+    border-radius: 50px;
+    text-align: center;
+  }
+
