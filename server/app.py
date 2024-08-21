@@ -161,7 +161,7 @@ def get_users():
     all_users = User.query.all()
     return [user.to_dict() for user in all_users]
 
-
+    
 
 @app.post('/request')
 def add_transaction():
@@ -172,33 +172,59 @@ def add_transaction():
             requestee=data['requestee'],
             amount=data['amount'],
             payment_method=data['payment_method'],
-            description=data['description']
+            description=data['description'],
+            status='pending'
         )
         db.session.add(new_transaction)
         db.session.commit()
         return new_transaction.to_dict(), 201
     except Exception as e:
-
         return {'error':str(e)}, 404
 
-@app.delete('/request')
-def make_request():
+@app.patch('/transaction/<int:transaction_id>/complete')
+def complete_transaction(transaction_id):
     data = request.json
-    payment = Transaction.query.where(data['id'] == Transaction.id).first()
-    db.session.delete(payment)
+    transaction_type = data.get('transactionType')
+    
+    transaction = Transaction.query.get(transaction_id)
+    if not transaction:
+        return {'error': 'Transaction not found'}, 404
+    
+    transaction.status = 'complete'
     db.session.commit()
-    return {}, 204
-
-@app.delete('/payment')
-def make_payment():
-    data = request.json
-    payment = Transaction.query.where(data['id'] == Transaction.id).first()
-    if not payment:
-        return {'error': 'No payment ID provided'}, 400
-    else:
-        db.session.delete(payment)
+    
+    if transaction_type == 'debit':
+        # Move the completed debit to credits
+        new_credit = Transaction(
+            requestor=transaction.requestee,
+            requestee=transaction.requestor,
+            amount=transaction.amount,
+            payment_method='payment',
+            description=f"Completed: {transaction.description}",
+            status='complete'
+        )
+        db.session.add(new_credit)
         db.session.commit()
-        return {}, 204
+    
+    return transaction.to_dict(), 200
+# @app.delete('/request')
+# def make_request():
+#     data = request.json
+#     payment = Transaction.query.where(data['id'] == Transaction.id).first()
+#     db.session.delete(payment)
+#     db.session.commit()
+#     return {}, 204
+
+# @app.delete('/payment')
+# def make_payment():
+#     data = request.json
+#     payment = Transaction.query.where(data['id'] == Transaction.id).first()
+#     if not payment:
+#         return {'error': 'No payment ID provided'}, 400
+#     else:
+#         db.session.delete(payment)
+#         db.session.commit()
+#         return {}, 204
 
 @app.get('/api/stats')
 def get_stats():

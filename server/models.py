@@ -81,6 +81,7 @@ class Transaction(db.Model, SerializerMixin):
     amount = db.Column(db.Float, nullable=False)
     payment_method=db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=False)
+    status = db.Column(db.String, default='pending')
 
     # Relationships
     sender = db.relationship('User', 
@@ -146,7 +147,11 @@ class FriendRequest(db.Model, SerializerMixin):
     invitee = db.relationship('User', foreign_keys=[invitee_id], back_populates='friends_received')
     
     # Serialize rules
-    serialize_rules = ('-invitor', '-invitee')
+    # serialize_rules = ('invitor', 'invitee')
+    
+    # serialize_rules = ('-invitor.friends_sent', 'invitor.friends_received', '-invitee.friends_received', 'invitee.friends_sent', '-invitor.transactions_sent', '-invitor.transactions_received')
+
+    serialize_only = ('id','invitor_id', 'invitee_id', 'status', 'invitor.username', 'invitee.username')
 
     def __repr__(self):
         return f"<Friend request from {self.invitor} to {self.invitee}>"

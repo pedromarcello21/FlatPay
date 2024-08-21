@@ -130,7 +130,7 @@ function FriendshipPage({ currentUser }) {
         <ul>
           {friendRequests.map(request => (
             <li key={request.id}>
-              {request.invitor_id} wants to be your friend
+              {request.invitor.username} wants to be your friend
               <button onClick={() => handleAcceptRequest(request.id)}>Accept</button>
               <button onClick={() => handleRejectRequest(request.id)}>Reject</button>
             </li>

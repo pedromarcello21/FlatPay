@@ -18,8 +18,7 @@ function NavBar({ currentUser, setCurrentUser }) {
   return (
     <nav>
       <Link to="/">Home</Link>
-      <Link to="/credit">Credit</Link>
-      <Link to="/debit">Debit</Link>
+      <Link to="/transaction-history">Transaction History</Link>
       <Link to="/stats">Stats</Link>
       <Link to="/friendship">Friends</Link>
       <button onClick={handleLogout}>Logout</button>
