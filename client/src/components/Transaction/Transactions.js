@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import TransactionRequest from './TransactionRequest';
 
@@ -77,7 +76,9 @@ export default function Transactions({ currentUser }) {
     }).then((res) => {
       if (res.status === 204) {
         setDebits((debits) => debits.filter((debit) => debit.id !== parseInt(transaction_to_delete)));
-      }
+        fetchDebits();
+        fetchCredits();
+     }
     });
   };
 
@@ -96,6 +97,8 @@ export default function Transactions({ currentUser }) {
       }).then((res) => {
         if (res.status === 204) {
           setPayments((payments) => payments.filter((payment) => payment.id !== parseInt(transaction_to_delete)));
+          fetchDebits();
+          fetchCredits();
         }
       });
     };
@@ -158,7 +161,3 @@ export default function Transactions({ currentUser }) {
     </>
   );
 }
-
-
-
-

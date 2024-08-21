@@ -10,9 +10,11 @@ from flask_restful import Resource
 from config import app, db, api
 
 # Model imports
-from models import User, Transaction, FriendRequest
+from models import User, Transaction, FriendRequest, TransactionHistory
 
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, or_
+from datetime import datetime
+
 
 # Views go here!
 
@@ -214,38 +216,86 @@ def get_users():
 def add_transaction():
     try:
         data = request.json
+        user_id = session.get('user_id')
+        if not user_id:
+            return {'error': 'Unauthorized'}, 401
+
         new_transaction = Transaction(
-            requestor=session.get('user_id'),
+            requestor=user_id,
             requestee=data['requestee'],
             amount=data['amount'],
             year=data['year'],
-            payment_method=data['payment_method']
+            payment_method=data['payment_method'],
+            status='pending'
         )
         db.session.add(new_transaction)
+        db.session.flush()
+
+        # Create two TransactionHistory records, one for each user
+        history_requestor = TransactionHistory(
+            transaction_id=new_transaction.id,
+            user_id=user_id,
+            other_user_id=data['requestee'],
+            amount=data['amount'],
+            year=data['year'],
+            status='pending',
+            payment_method=data['payment_method'],
+            transaction_type='credit' if data['payment_method'] == 'request' else 'debit'
+        )
+        history_requestee = TransactionHistory(
+            transaction_id=new_transaction.id,
+            user_id=data['requestee'],
+            other_user_id=user_id,
+            amount=data['amount'],
+            year=data['year'],
+            status='pending',
+            payment_method=data['payment_method'],
+            transaction_type='debit' if data['payment_method'] == 'request' else 'credit'
+        )
+        db.session.add(history_requestor)
+        db.session.add(history_requestee)
+
         db.session.commit()
         return new_transaction.to_dict(), 201
     except Exception as e:
-
-        return {'error':str(e)}, 404
-
+        db.session.rollback()
+        return {'error': str(e)}, 400
+    
 @app.delete('/request')
 def make_request():
     data = request.json
-    payment = Transaction.query.where(data['id'] == Transaction.id).first()
-    db.session.delete(payment)
+    transaction = Transaction.query.filter(Transaction.id == data['id']).first()
+    if not transaction:
+        return {'error': 'Transaction not found'}, 404
+    
+    # Update transaction status
+    transaction.status = 'completed'
+    
+    # Update transaction history
+    histories = TransactionHistory.query.filter_by(transaction_id=transaction.id).all()
+    for history in histories:
+        history.status = 'completed'
+    
     db.session.commit()
     return {}, 204
 
 @app.delete('/payment')
 def make_payment():
     data = request.json
-    payment = Transaction.query.where(data['id'] == Transaction.id).first()
+    payment = Transaction.query.filter(Transaction.id == data['id']).first()
     if not payment:
         return {'error': 'No payment ID provided'}, 400
-    else:
-        db.session.delete(payment)
-        db.session.commit()
-        return {}, 204
+    
+    # Update transaction status
+    payment.status = 'completed'
+    
+    # Update transaction history
+    histories = TransactionHistory.query.filter_by(transaction_id=payment.id).all()
+    for history in histories:
+        history.status = 'completed'
+    
+    db.session.commit()
+    return {}, 204
 
 @app.get('/api/stats')
 def get_stats():
@@ -401,7 +451,100 @@ def get_friends():
     
     return [friend.to_dict() for friend in friends], 200
 
-## END FRIEND REQUESTS ###############################################################################################################################################
+## END FRIEND REQUESTS ###########################################################################################################################################
+## TRANSACTION HISTORY PARTS #############################################################################################################################################
+
+@app.route('/complete_transaction/<int:transaction_id>', methods=['PATCH'])
+def complete_transaction(transaction_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return {'error': 'Unauthorized'}, 401
+
+    transaction = Transaction.query.get(transaction_id)
+    if not transaction:
+        return {'error': 'Transaction not found'}, 404
+
+    if transaction.requestee != user_id:
+        return {'error': 'Unauthorized'}, 403
+
+    transaction.status = 'completed'
+
+    # Update transaction history
+    history = TransactionHistory.query.filter_by(transaction_id=transaction_id).first()
+    if history:
+        history.status = 'completed'
+
+    db.session.commit()
+
+    return {'message': 'Transaction completed successfully'}, 200
+
+@app.route('/credit_history')
+def get_credit_history():
+    user_id = session.get('user_id')
+    if not user_id:
+        return {'error': 'Unauthorized'}, 401
+
+    search_term = request.args.get('search', '')
+
+    query = TransactionHistory.query.filter(
+        TransactionHistory.user_id == user_id,
+        TransactionHistory.transaction_type == 'credit'
+    ).join(User, User.id == TransactionHistory.other_user_id)
+
+    if search_term:
+        query = query.filter(
+            or_(
+                User.username.ilike(f'%{search_term}%'),
+                TransactionHistory.amount.cast(db.String).ilike(f'%{search_term}%'),
+                TransactionHistory.year.cast(db.String).ilike(f'%{search_term}%'),
+                TransactionHistory.status.ilike(f'%{search_term}%')
+            )
+        )
+
+    credit_history = query.order_by(TransactionHistory.created_at.desc()).all()
+
+    return [{
+        'id': history.id,
+        'amount': history.amount,
+        'year': history.year,
+        'status': history.status,
+        'to': User.query.get(history.other_user_id).username
+    } for history in credit_history], 200
+
+@app.route('/debit_history')
+def get_debit_history():
+    user_id = session.get('user_id')
+    if not user_id:
+        return {'error': 'Unauthorized'}, 401
+
+    search_term = request.args.get('search', '')
+
+    query = TransactionHistory.query.filter(
+        TransactionHistory.user_id == user_id,
+        TransactionHistory.transaction_type == 'debit'
+    ).join(User, User.id == TransactionHistory.other_user_id)
+
+    if search_term:
+        query = query.filter(
+            or_(
+                User.username.ilike(f'%{search_term}%'),
+                TransactionHistory.amount.cast(db.String).ilike(f'%{search_term}%'),
+                TransactionHistory.year.cast(db.String).ilike(f'%{search_term}%'),
+                TransactionHistory.status.ilike(f'%{search_term}%')
+            )
+        )
+
+    debit_history = query.order_by(TransactionHistory.created_at.desc()).all()
+
+    return [{
+        'id': history.id,
+        'amount': history.amount,
+        'year': history.year,
+        'status': history.status,
+        'from': User.query.get(history.other_user_id).username
+    } for history in debit_history], 200
+
+## END TRANSACTION PARTS #########################################################################################################################################
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

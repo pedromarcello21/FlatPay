@@ -1,7 +1,6 @@
 from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
-
 from config import db, bcrypt
 
 
@@ -33,6 +32,7 @@ class User(db.Model, SerializerMixin):
     transactions_received = db.relationship('Transaction', foreign_keys='Transaction.requestee', back_populates='receiver')
     friends_sent = db.relationship('FriendRequest', foreign_keys='FriendRequest.invitor_id', back_populates='invitor')
     friends_received = db.relationship('FriendRequest', foreign_keys='FriendRequest.invitee_id', back_populates='invitee')
+    transaction_history = db.relationship('TransactionHistory', foreign_keys='TransactionHistory.user_id', back_populates='user')
 
     friends = db.relationship(
         'User',
@@ -50,7 +50,7 @@ class User(db.Model, SerializerMixin):
     )
 
     # Serialize rules
-    serialize_rules = ('-transactions_sent.sender', '-transactions_received.receiver', '-_hashed_password', '-friends_sent.invitor', '-friends_received.invitee', '-friends.befriended_by', '-befriended_by.friends','-friends.friends','-befriended_by.befriended_by')
+    serialize_rules = ('-transactions_sent.sender', '-transactions_received.receiver', '-_hashed_password', '-friends_sent.invitor', '-friends_received.invitee', '-friends.befriended_by', '-befriended_by.friends','-friends.friends','-befriended_by.befriended_by','-transaction_history.user')
 
     def __repr__(self):
         return f"<User {self.username}>"
@@ -61,24 +61,19 @@ class Transaction(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     requestor = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     requestee = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    amount = db.Column(db.Integer, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
     year = db.Column(db.Integer, nullable=False)
-    payment_method=db.Column(db.String)
+    payment_method = db.Column(db.String)
+    status = db.Column(db.String, default='pending')
 
     # Relationships
-    sender = db.relationship('User', 
-                             foreign_keys=[requestor], 
-                             back_populates='transactions_sent')
-                             
-    receiver = db.relationship('User', 
-                               foreign_keys=[requestee], 
-                               back_populates='transactions_received')
-    
-    def __repr__(self):
-        return f"<Transaction from {self.requestor} to {self.requestee}, amount: {self.amount}, year: {self.year}>"
+    sender = db.relationship('User', foreign_keys=[requestor], back_populates='transactions_sent')
+    receiver = db.relationship('User', foreign_keys=[requestee], back_populates='transactions_received')
+    history = db.relationship('TransactionHistory', back_populates='transaction', cascade='all, delete-orphan')
 
-    # Serialize rules
-    serialize_rules = ('-sender', '-receiver')
+    serialize_rules = ('-sender', '-receiver', '-history')
+    def __repr__(self):
+        return f"<Transaction from {self.requestor} to {self.requestee}, amount: {self.amount}, year: {self.year}, status: {self.status}>"
 
 ## FRIEND REQUEST MODEL ###############################################################################################
 class FriendRequest(db.Model, SerializerMixin):
@@ -100,6 +95,27 @@ class FriendRequest(db.Model, SerializerMixin):
         return f"<Friend request from {self.invitor} to {self.invitee}>"
     
 ## END FRIEND REQUEST MODEL ###############################################################################################
+## TRANSACTION HISTORY MODEL ###############################################################################################
 
+class TransactionHistory(db.Model, SerializerMixin):
+    __tablename__ = "transaction_history"
 
-    
+    id = db.Column(db.Integer, primary_key=True)
+    transaction_id = db.Column(db.Integer, db.ForeignKey('transactions.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    other_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String, nullable=False)
+    payment_method = db.Column(db.String, nullable=False)
+    transaction_type = db.Column(db.String, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, onupdate=db.func.now())
+
+    transaction = db.relationship('Transaction', back_populates='history')
+    user = db.relationship('User', foreign_keys=[user_id], back_populates='transaction_history')
+    other_user = db.relationship('User', foreign_keys=[other_user_id])
+
+    serialize_rules = ('-user', '-other_user', '-transaction')
+
+## END TRANSACTION HISTORY MODEL ###############################################################################################
