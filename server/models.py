@@ -79,8 +79,9 @@ class Transaction(db.Model, SerializerMixin):
     requestor = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     requestee = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
-    payment_method=db.Column(db.String, nullable=False)
+    payment_method = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=False)
+    status = db.Column(db.String, default='pending')
 
     # Relationships
     sender = db.relationship('User', 
@@ -92,11 +93,10 @@ class Transaction(db.Model, SerializerMixin):
                                back_populates='transactions_received')
     
     def __repr__(self):
-        return f"<Transaction from {self.requestor} to {self.requestee}, amount: {self.amount}, year: {self.year}>"
+        return f"<Transaction from {self.sender.username} to {self.receiver.username}, amount: {self.amount}, description: {self.description}>"
 
     # Serialize rules
     serialize_rules = ('-sender', '-receiver')
-
     @validates('requestor')
     def validates_requestor(self, key, value):
         if not value:

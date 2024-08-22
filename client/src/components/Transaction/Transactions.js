@@ -65,40 +65,39 @@ export default function Transactions({ currentUser }) {
   // Function to handle payment (deleting a transaction)
   const handleRequest = (e) => {
     e.preventDefault();
-    const transaction_to_delete = e.target.parentNode.id;
-    fetch('/request', {
-      method: 'DELETE',
+    const transaction_id = e.target.parentNode.id;
+    fetch(`/request/${transaction_id}`, {
+      method: 'PATCH',
       headers: {
         'Content-type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ id: transaction_to_delete }),
     }).then((res) => {
-      if (res.status === 204) {
-        setDebits((debits) => debits.filter((debit) => debit.id !== parseInt(transaction_to_delete)));
+      if (res.ok) {
+        fetchDebits();
+        fetchCredits();
+        fetchPayments();
       }
     });
   };
 
-    // Function to handle payment (deleting a transaction)
-    const handlePayment = (e) => {
-      e.preventDefault();
-      const transaction_to_delete = e.target.parentNode.id;
-      console.log(transaction_to_delete)
-      fetch('/payment', {
-        method: 'DELETE',
-        headers: {
-          'Content-type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ id: transaction_to_delete }),
-      }).then((res) => {
-        if (res.status === 204) {
-          setPayments((payments) => payments.filter((payment) => payment.id !== parseInt(transaction_to_delete)));
-        }
-      });
-    };
-
+  const handlePayment = (e) => {
+    e.preventDefault();
+    const transaction_id = e.target.parentNode.id;
+    fetch(`/payment/${transaction_id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-type': 'application/json',
+        'Accept': 'application/json',
+      },
+    }).then((res) => {
+      if (res.ok) {
+        fetchDebits();
+        fetchCredits();
+        fetchPayments();
+      }
+    });
+  };
 
   return (
     <>

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
 import NavBar from './NavBar';
 import UserPanel from './UserPanel/UserPanel';
-import CreditPage from '../pages/CreditPage';
-import DebitPage from '../pages/DebitPage';
+// import CreditPage from '../pages/CreditPage';
+// import DebitPage from '../pages/DebitPage';
+import TransactionHistory from '../pages/TransactionHistory';
 import StatsPage from '../pages/StatsPage';
 import FriendshipPage from '../pages/FriendshipPage';
 
@@ -30,11 +31,8 @@ function App() {
           </Route>
           {currentUser && (
             <>
-              <Route path="/credit">
-                <CreditPage currentUser={currentUser} />
-              </Route>
-              <Route path="/debit">
-                <DebitPage currentUser={currentUser} />
+              <Route path="/transactions">
+                <TransactionHistory currentUser={currentUser} />
               </Route>
               <Route path="/stats">
                 <StatsPage currentUser={currentUser} />

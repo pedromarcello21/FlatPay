@@ -12,15 +12,14 @@ from config import app, db, api
 # Model imports
 from models import User, Transaction, FriendRequest
 
-from sqlalchemy import func, and_
+# SQLAlchemy functions
+from sqlalchemy import func, case, and_, or_
 
 # Views go here!
-
 
 @app.route('/')
 def index():
     return '<h1>Project Server</h1>'
-
 
 # Signup
 @app.post('/signup')
@@ -39,7 +38,6 @@ def create_user():
         return new_user.to_dict(), 201
     except Exception as e:
         return {'error': str(e)}, 404
-    
 
 # Check session
 @app.get('/check_session')
@@ -50,7 +48,6 @@ def check_session():
         return user.to_dict(), 200
     else:
         return {}, 204
-    
 
 # Login/logout
 @app.post('/login')
@@ -63,14 +60,12 @@ def login():
     else:
         return {'error': 'Invalid username or password'}, 401
 
-
 @app.delete('/logout')
 def logout():
     session.pop('user_id')
     return {}, 204
 
-
-# Who does the user owe?
+# Who does the user owe? (pending requests only)
 @app.get('/debits')
 def get_debits():
     debits = (
@@ -79,7 +74,8 @@ def get_debits():
         .where(
             and_(
                 Transaction.requestee == session.get('user_id'),
-                Transaction.payment_method == 'request'
+                Transaction.payment_method == 'request',
+                Transaction.status == 'pending'
             )
         ).all()
     )
@@ -91,15 +87,14 @@ def get_debits():
             'requestor_username': username,
             'requestee': transaction.requestee,
             'amount': transaction.amount,
-            'description':transaction.description
+            'description': transaction.description
         }
         for transaction, username in debits
     ]
     
     return result, 200
 
-
-# Who owes the user?
+# Who owes the user? (pending credits only)
 @app.get('/credits')
 def get_credits():
     credits = (
@@ -108,7 +103,8 @@ def get_credits():
         .where(
             and_(
                 Transaction.requestor == session.get('user_id'),
-                Transaction.payment_method == 'request'
+                Transaction.payment_method == 'request',
+                Transaction.status == 'pending'
             )
         )
         .all()
@@ -120,48 +116,43 @@ def get_credits():
             'requestee': transaction.requestee,
             'requestee_username': username,
             'amount': transaction.amount,
-            'description':transaction.description
+            'description': transaction.description
         }
         for transaction, username in credits
     ]
     
     return result, 200
 
+# Pending payments
 @app.get('/payments')
 def get_payments():
-
     payments = (
         db.session.query(Transaction, User.username)
         .join(User, Transaction.requestor == User.id)
         .where(
             and_(
                 Transaction.payment_method == 'payment',
-                    Transaction.requestee == session.get('user_id')
-                )).all()
-
-            )
+                Transaction.requestee == session.get('user_id'),
+                Transaction.status == 'pending'
+            )).all()
+    )
     result = [
         {
-            'id':transaction.id,
-            'requestor':transaction.requestor,
+            'id': transaction.id,
+            'requestor': transaction.requestor,
             'requestor_username': username,
             'requestee': transaction.requestee,
             'amount': transaction.amount,
-            'description':transaction.description
-
+            'description': transaction.description
         }
         for transaction, username in payments
     ]
     return result, 200
 
-
-
 @app.get('/users')
 def get_users():
     all_users = User.query.all()
     return [user.to_dict() for user in all_users]
-
-
 
 @app.post('/request')
 def add_transaction():
@@ -172,96 +163,74 @@ def add_transaction():
             requestee=data['requestee'],
             amount=data['amount'],
             payment_method=data['payment_method'],
-            description=data['description']
+            description=data['description'],
+            status='pending'
         )
         db.session.add(new_transaction)
         db.session.commit()
         return new_transaction.to_dict(), 201
     except Exception as e:
+        return {'error': str(e)}, 404
 
-        return {'error':str(e)}, 404
-
-@app.delete('/request')
-def make_request():
-    data = request.json
-    payment = Transaction.query.where(data['id'] == Transaction.id).first()
-    db.session.delete(payment)
+@app.patch('/request/<int:transaction_id>')
+def complete_request(transaction_id):
+    transaction = Transaction.query.get(transaction_id)
+    if not transaction:
+        return {'error': 'Transaction not found'}, 404
+    transaction.status = 'completed'
     db.session.commit()
-    return {}, 204
+    return {}, 200
 
-@app.delete('/payment')
-def make_payment():
-    data = request.json
-    payment = Transaction.query.where(data['id'] == Transaction.id).first()
-    if not payment:
-        return {'error': 'No payment ID provided'}, 400
-    else:
-        db.session.delete(payment)
-        db.session.commit()
-        return {}, 204
+@app.patch('/payment/<int:transaction_id>')
+def complete_payment(transaction_id):
+    transaction = Transaction.query.get(transaction_id)
+    if not transaction:
+        return {'error': 'Transaction not found'}, 404
+    transaction.status = 'completed'
+    db.session.commit()
+    return {}, 200
 
-@app.get('/api/stats')
-def get_stats():
+@app.get('/transactions')
+def get_transactions():
     user_id = session.get('user_id')
     if not user_id:
-        return {'error': 'Unauthorized'}, 401
+        return {'error': "You must be logged in to perform this action"}, 401
 
-    # 1. Total transactions
-    total_transactions = Transaction.query.filter(
-        (Transaction.requestor == user_id) | (Transaction.requestee == user_id)
-    ).count()
+    all_transactions = (
+        db.session.query(Transaction, User.username)
+        .join(User, 
+            ((Transaction.requestor == User.id) & (Transaction.requestee == user_id)) |
+            ((Transaction.requestee == User.id) & (Transaction.requestor == user_id))
+        )
+        .all()
+    )
 
-    # 2. Transactions as sender
-    transactions_as_sender = Transaction.query.filter(Transaction.requestor == user_id).count()
+    result = []
+    for transaction, other_username in all_transactions:
+        is_requestor = transaction.requestor == user_id
+        result.append({
+            'id': transaction.id,
+            'type': 'sent' if is_requestor else 'received',
+            'payment_method': transaction.payment_method,
+            'other_username': other_username,
+            'amount': transaction.amount,
+            'description': transaction.description,
+            'status': transaction.status,
+        })
 
-    # 3. Transactions as receiver
-    transactions_as_receiver = Transaction.query.filter(Transaction.requestee == user_id).count()
-
-    # 4. Transaction partners
-    transaction_partners = db.session.query(
-        User.id,
+    return result, 200
+# Updated stats route
+@app.get('/stats')
+def get_stats():
+    user_id = session.get('user_id')
+    user_transaction_ratios = db.session.query(
         User.username,
-        func.count(Transaction.id).label('transaction_count'),
-        func.sum(case(
-            (Transaction.requestor == user_id, -Transaction.amount),
-            else_=Transaction.amount
-        )).label('total_amount')
-    ).join(
-        Transaction,
-        or_(Transaction.requestor == User.id, Transaction.requestee == User.id)
-    ).filter(
-        and_(User.id != user_id, or_(Transaction.requestor == user_id, Transaction.requestee == user_id))
-    ).group_by(User.id).all()
-
-    # 5. Most active transaction partner
-    most_active_partner = max(transaction_partners, key=lambda x: x.transaction_count)
-
-    # 6 & 7. Yearly transaction summary
-    yearly_transactions = db.session.query(
-        Transaction.year,
-        func.sum(case((Transaction.requestor == user_id, Transaction.amount), else_=0)).label('credit'),
-        func.sum(case((Transaction.requestee == user_id, Transaction.amount), else_=0)).label('debit')
-    ).filter(
-        or_(Transaction.requestor == user_id, Transaction.requestee == user_id)
-    ).group_by(Transaction.year).all()
-
-    return {
-        'totalTransactions': total_transactions,
-        'transactionsAsSender': transactions_as_sender,
-        'transactionsAsReceiver': transactions_as_receiver,
-        'transactionPartners': [{
-            'userId': partner.id,
-            'username': partner.username,
-            'transactionCount': partner.transaction_count,
-            'totalAmount': float(partner.total_amount)
-        } for partner in transaction_partners],
-        'mostActivePartner': {
-            'userId': most_active_partner.id,
-            'username': most_active_partner.username,
-            'transactionCount': most_active_partner.transaction_count,
-            'totalAmount': float(most_active_partner.total_amount)
-        }
-    }, 200
+        func.count(Transaction.id).label('count'),
+        (func.count(Transaction.id) / func.count(Transaction.id).over()).label('ratio')
+    ).join(Transaction, or_(Transaction.requestor == User.id, Transaction.requestee == User.id)).group_by(User.username).all()
+    result={'userTransactionRatios': [{'username': username, 'ratio': ratio} for username, count, ratio in user_transaction_ratios],
+    }
+    return result, 200
 
 ## FRIEND REQUESTS ##############################################################################################################################
 
@@ -270,7 +239,6 @@ def send_friend_request():
     data = request.json
     receiver_id = data.get('receiver_id')
     sender_id = session.get('user_id')
-    
     
     if not sender_id:
         return {'error': "You must be logged in to perform this action"}, 401
@@ -288,7 +256,6 @@ def send_friend_request():
     db.session.commit()
     
     return new_request.to_dict(), 201
-    # return data, 201
 
 @app.get('/friend_requests')
 def get_friend_requests():
