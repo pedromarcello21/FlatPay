@@ -1,3 +1,14 @@
+// 1. pi graph of ratio of how many transaction for between different users with login user, with number counts and ratio
+// 2. pi graph of ratio of how many credit  transaction for between different users with login user, with number counts and ratio
+// 3. pi graph of ratio of how many debit transaction for between different users with login user, with number counts and ratio
+// 4. Pi graph of the ratio of debit and credit transaction of login user and number counts
+// 5. pi graph with complete transactions and pending transaction(incomplete) about the ratio and detailed counts numbers, this is up to attributes status or state( complete move to transaction history, and change this this attributes, probably ’True” or “False” control states)
+// 6. pi graph of ratio of total credit transaction amounts  between different users and  login user, with total credit amounts number between login user and each other user and ratio.
+// 7. Same thing for debit, pi graph of ratio of total debit transaction amounts  between different users and login user, with total debit amounts number between login user and each other user and ratio.
+// 8. Finally, pi graph of ratio of total transaction amounts between different users and  login user, which sum up the credit amounts and debit amounts, and it will show total transaction amounts number between login user and each other user and ratio. 
+
+
+
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
@@ -5,7 +16,7 @@ function StatsPage({ currentUser }) {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    fetch('/api/stats')
+    fetch('/stats')
       .then(res => res.json())
       .then(data => setStats(data));
   }, []);
@@ -17,73 +28,17 @@ function StatsPage({ currentUser }) {
   return (
     <div>
       <h2>Transaction Statistics</h2>
-      
-      <div>
-        <h3>General Stats</h3>
-        <p>Total transactions: {stats.totalTransactions}</p>
-        <p>Transactions as sender: {stats.transactionsAsSender}</p>
-        <p>Transactions as receiver: {stats.transactionsAsReceiver}</p>
-      </div>
 
-      <div>
-        <h3>Transaction Partners</h3>
-        <ul>
-          {stats.transactionPartners.map(partner => (
-            <li key={partner.userId}>
-              {partner.username}: {partner.transactionCount} transactions, 
-              Total amount: ${partner.totalAmount.toFixed(2)} 
-              {partner.isFriend ? ' (Friend)' : ''}
-            </li>
+      <h3>Transaction Ratio (Users)</h3>
+      <PieChart width={400} height={400}>
+        <Pie data={stats.userTransactionRatios} cx={200} cy={200} outerRadius={80} fill="#8884d8" dataKey="ratio">
+          {stats.userTransactionRatios.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
-        </ul>
-      </div>
-
-      <div>
-        <h3>Most Active Transaction Partner</h3>
-        <p>
-          {stats.mostActivePartner.username}: {stats.mostActivePartner.transactionCount} transactions, 
-          Total amount: ${stats.mostActivePartner.totalAmount.toFixed(2)}
-        </p>
-      </div>
-
-      <div>
-        <h3>Transaction Distribution</h3>
-        <PieChart width={400} height={400}>
-          <Pie
-            data={stats.transactionPartners}
-            cx={200}
-            cy={200}
-            labelLine={false}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="transactionCount"
-          >
-            {stats.transactionPartners.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip />
-          <Legend />
-        </PieChart>
-      </div>
-
-      <div>
-        <h3>Yearly Transaction Summary</h3>
-        <BarChart
-          width={600}
-          height={300}
-          data={stats.yearlyTransactions}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="year" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="credit" stackId="a" fill="#8884d8" />
-          <Bar dataKey="debit" stackId="a" fill="#82ca9d" />
-        </BarChart>
-      </div>
+        </Pie>
+        <Tooltip />
+        <Legend />
+      </PieChart>
     </div>
   );
 }
