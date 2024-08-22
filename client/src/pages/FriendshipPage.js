@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+import "./FriendshipPage.css"
+
 function FriendshipPage({ currentUser }) {
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
@@ -110,7 +112,7 @@ function FriendshipPage({ currentUser }) {
   };
   
   return (
-    <div>
+    <div id="friendship-management">
       <h2>Friendship Management</h2>
 
       <div>
@@ -130,7 +132,7 @@ function FriendshipPage({ currentUser }) {
         <ul>
           {friendRequests.map(request => (
             <li key={request.id}>
-              {request.invitor_id} wants to be your friend
+              {request.invitor.username} wants to be your friend
               <button onClick={() => handleAcceptRequest(request.id)}>Accept</button>
               <button onClick={() => handleRejectRequest(request.id)}>Reject</button>
             </li>
@@ -140,7 +142,7 @@ function FriendshipPage({ currentUser }) {
 
       <div>
         <h3>Search Users</h3>
-        <form onSubmit={handleSearch}>
+        <form onSubmit={handleSearch} id="search-form">
           <input
             type="text"
             value={searchTerm}
@@ -156,8 +158,8 @@ function FriendshipPage({ currentUser }) {
               {!user.isFriend && !user.requestSent && (
                 <button onClick={() => handleAddFriend(user.id)}>Add Friend</button>
               )}
-              {user.requestSent && <span>Friend request sent</span>}
-              {user.isFriend && <span>Already friends</span>}
+              {user.requestSent && <span className ="request-msg">Friend request sent ✔️</span>}
+              {user.isFriend && <span className ="request-msg">Already friends ✔️</span>}
             </li>
           ))}
         </ul>
