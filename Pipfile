@@ -15,6 +15,8 @@ flask-cors = "*"
 faker = "*"
 flask-bcrypt = "*"
 python-dotenv = "*"
+psycopg2-binary = "*"
+gunicorn = "*"
 
 [requires]
 python_full_version = "3.8.13"

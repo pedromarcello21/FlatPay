@@ -3,8 +3,9 @@
 # Standard library imports
 
 # Remote library imports
-from flask import request, session
+from flask import request, session, render_template
 from flask_restful import Resource
+
 
 # Local imports
 from config import app, db, api
@@ -17,9 +18,14 @@ from sqlalchemy import func, case, and_, or_
 
 # Views go here!
 
-@app.route('/')
-def index():
-    return '<h1>Project Server</h1>'
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("index.html")
+
+
+# @app.route('/')
+# def index():
+#     return '<h1>Project Server</h1>'
 
 # Signup
 @app.post('/signup')

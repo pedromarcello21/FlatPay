@@ -15,9 +15,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Instantiate app, set attributes
-app = Flask(__name__)
+app = Flask( __name__, static_url_path='', static_folder='../client/build', template_folder='../client/build' )
 app.secret_key = os.environ.get('FLASK_SECRET') #need to pull from env file
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+app.config['SQLALCHEMY_DATABASE_URI']= os.environ.get('POST_GRES_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
